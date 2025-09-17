@@ -1,39 +1,33 @@
-# mine
 import streamlit as st
 from openai import OpenAI
+import os
 
-# Show title and description.
 st.title("🩺 Disease Awareness Chatbot")
-st.write("Upload a document related to diseases below and ask questions about it,and chatbot will answer",
-"To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). ")
+st.write(
+    "Ask questions about diseases, symptoms, and preventive care — no file upload needed!",
+    "Provide your OpenAI API key below to start chatting.",
+)
 
-# Ask user for their OpenAI API key via `st.text_input`.
-# Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
-# via `st.secrets`, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
 openai_api_key = st.text_input("OpenAI API Key", type="password")
 if not openai_api_key:
     st.info("Please add your OpenAI API key to continue.", icon="🗝️")
 else:
-
-    # Create an OpenAI client.
     client = OpenAI(api_key=openai_api_key)
 
-    # Let the user upload a file via `st.file_uploader`.
-    uploaded_file = st.file_uploader(
-        "Upload a document (.txt or .csv or.md)", type=("txt", "csv" , "md")
-    )
+    DATAFILE = "dataset.csv"  # put your dataset here
+    if not os.path.exists(DATAFILE):
+        st.error(f"Missing dataset file: {DATAFILE}")
+        st.stop()
 
-    # Ask the user for a question via `st.text_area`.
+    with open(DATAFILE, "r", encoding="utf-8") as f:
+        document = f.read()
+
     question = st.text_area(
         "Ask me about diseases, symptoms, and preventive care. ⚕️",
         placeholder="Can you give me a short summary?",
-        disabled=not uploaded_file,
     )
 
-    if uploaded_file and question:
-
-        # Process the uploaded file and question.
-        document = uploaded_file.read().decode()
+    if question:
         messages = [
             {
                 "role": "user",
@@ -41,12 +35,9 @@ else:
             }
         ]
 
-        # Generate an answer using the OpenAI API.
         stream = client.chat.completions.create(
             model="gpt-5-nano-2025-08-07",
             messages=messages,
             stream=True,
         )
-
-        # Stream the response to the app using `st.write_stream`.
         st.write_stream(stream)
