@@ -1,53 +1,86 @@
 import streamlit as st
 from openai import OpenAI
 
-# Show title and description.
-st.title("📄 Document question answering")
-st.write(
-    "Upload a document below and ask a question about it – GPT will answer! "
-    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). "
-)
+st.set_page_config(page_title="🩺 Disease Awareness Chatbot", page_icon="💊", layout="wide")
 
-# Ask user for their OpenAI API key via `st.text_input`.
-# Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
-# via `st.secrets`, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
-openai_api_key = st.text_input("OpenAI API Key", type="password")
-if not openai_api_key:
-    st.info("Please add your OpenAI API key to continue.", icon="🗝️")
-else:
+with st.sidebar:
+    st.header("🔑 Settings")
+    openai_api_key = st.text_input("Enter OpenAI API Key", type="password")
+    st.markdown("👉 [Get your API key here](https://platform.openai.com/account/api-keys)")
+    st.divider()
+    st.info("Your key is only used in this session.", icon="ℹ️")
 
-    # Create an OpenAI client.
-    client = OpenAI(api_key=openai_api_key)
 
-    # Let the user upload a file via `st.file_uploader`.
-    uploaded_file = st.file_uploader(
-        "Upload a document (.txt or .csv or.md)", type=("txt", "csv" , "md")
-    )
+tab1, tab2 = st.tabs(["💬 Chatbot", "ℹ️ About"])
 
-    # Ask the user for a question via `st.text_area`.
-    question = st.text_area(
-        "Now ask a question about the document!",
-        placeholder="Can you give me a short summary?",
-        disabled=not uploaded_file,
-    )
+with tab1:
+    st.title("🩺 Disease Awareness Chatbot")
+    st.write("Ask me about diseases, symptoms, and preventive care. ⚕️")
 
-    if uploaded_file and question:
+    if not openai_api_key:
+        st.warning("Please enter your OpenAI API key in the sidebar to start chatting.", icon="🗝️")
+    else:
+        
+        client = OpenAI(api_key=openai_api_key)
 
-        # Process the uploaded file and question.
-        document = uploaded_file.read().decode()
-        messages = [
-            {
-                "role": "user",
-                "content": f"Here's a document: {document} \n\n---\n\n {question}",
-            }
-        ]
+        
+        if "messages" not in st.session_state:
+            st.session_state.messages = [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a helpful medical awareness assistant. "
+                        "Provide reliable health information in simple language. "
+                        "Always remind users to consult a doctor for actual medical advice."
+                    )
+                }
+            ]
 
-        # Generate an answer using the OpenAI API.
-        stream = client.chat.completions.create(
-            model="gpt-5-nano-2025-08-07",
-            messages=messages,
-            stream=True,
-        )
+    
+        for msg in st.session_state.messages:
+            if msg["role"] == "user":
+                st.chat_message("user").write(msg["content"])
+            elif msg["role"] == "assistant":
+                st.chat_message("assistant").write(msg["content"])
 
-        # Stream the response to the app using `st.write_stream`.
-        st.write_stream(stream)
+        
+        if prompt := st.chat_input("Ask about a disease, symptom, or prevention tip..."):
+            
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            st.chat_message("user").write(prompt)
+
+            
+            with st.chat_message("assistant"):
+                with st.spinner("Thinking... 🤔"):
+                    stream = client.chat.completions.create(
+                        model="gpt-5-nano-2025-08-07",
+                        messages=st.session_state.messages,
+                        stream=True,
+                    )
+                    response = st.write_stream(stream)
+
+            
+            st.session_state.messages.append({"role": "assistant", "content": response})
+
+with tab2:
+    st.title("ℹ️ About This Chatbot")
+    st.write("""
+    ### 🩺 Disease Awareness Chatbot  
+    This chatbot is designed to **raise awareness about common diseases, symptoms, and prevention methods**.  
+
+    🔹 **Purpose**  
+    - Educate users about general health conditions.  
+    - Share prevention and lifestyle tips.  
+    - Encourage healthy practices.  
+
+    🔹 **Disclaimer**  
+    This chatbot is **not a substitute for professional medical advice**.  
+    Always consult a **qualified healthcare provider** for diagnosis and treatment.  
+
+    🔹 **Target Audience**  
+    - Students  
+    - General public  
+    - Awareness campaigns  
+
+    💡 Built with [Streamlit](https://streamlit.io) and OpenAI API.
+    """)
