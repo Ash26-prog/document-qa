@@ -3,11 +3,9 @@ import streamlit as st
 from openai import OpenAI
 
 # Show title and description.
-st.title("📄 Document question answering")
-st.write(
-    "Upload a document below and ask a question about it – GPT will answer! "
-    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). "
-)
+st.title("🩺 Disease Awareness Chatbot")
+st.write("Upload a document related to diseases below and ask questions about it,and chatbot will answer",
+"To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). ")
 
 # Ask user for their OpenAI API key via `st.text_input`.
 # Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
