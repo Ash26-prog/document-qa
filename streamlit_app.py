@@ -21,7 +21,7 @@ else:
 
     # Let the user upload a file via `st.file_uploader`.
     uploaded_file = st.file_uploader(
-        "Upload a document (.txt or .md)", type=("txt", "md")
+        "Upload a document (.txt or .csv or.md)", type=("txt", "csv" , "md")
     )
 
     # Ask the user for a question via `st.text_area`.
@@ -44,7 +44,7 @@ else:
 
         # Generate an answer using the OpenAI API.
         stream = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            #model="gpt-3.5-turbo", 
             messages=messages,
             stream=True,
         )
